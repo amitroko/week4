@@ -1,13 +1,19 @@
 import detectEthereumProvider from "@metamask/detect-provider"
 import { Strategy, ZkIdentity } from "@zk-kit/identity"
 import { generateMerkleProof, Semaphore } from "@zk-kit/protocols"
-import { providers } from "ethers"
+import { Contract, providers, utils } from "ethers"
 import Head from "next/head"
-import React from "react"
+import React, { useEffect } from "react"
 import styles from "../styles/Home.module.css"
+import { Formik } from "formik";
+import Greeter from "artifacts/contracts/Greeters.sol/Greeters.json"
 
 export default function Home() {
-    const [logs, setLogs] = React.useState("Connect your wallet and greet!")
+    useEffect(() => {
+        listenForNewGreeting();
+    });
+    const [logs, setLogs] = React.useState("Connect your wallet and greet!");
+    const [lastGreeting, setLastGreeting] = React.useState("");
 
     async function greet() {
         setLogs("Creating your Semaphore identity...")
@@ -59,6 +65,15 @@ export default function Home() {
         }
     }
 
+    async function listenForNewGreeting() {
+        const provider = new providers.JsonRpcProvider("http://localhost:8545");
+        const contract = new Contract("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", Greeter.abi, provider);
+
+        contract.on("NewGreeting", (greeting) => {
+            setLastGreeting(utils.parseBytes32String(greeting));
+        });
+    };
+
     return (
         <div className={styles.container}>
             <Head>
@@ -76,6 +91,87 @@ export default function Home() {
 
                 <div onClick={() => greet()} className={styles.button}>
                     Greet
+                </div>
+                <Formik
+                    initialValues={{ name: "", age: "", address: "" }}
+                    validate={values => {
+                        const errors = {
+                            name: "",
+                            age: "",
+                            address: ""
+                        };
+                        if (!values.name) {
+                        errors.name = 'Required';
+                        } else if (
+                            !/^[a-z ,.'-]+$/i.test(values.name)
+                        ) {
+                        errors.name = 'Invalid name';
+                        }
+                        if (!values.age) {
+                            errors.age = 'Required';
+                        } else if (
+                            !/^[0-9]*$/.test(values.age)
+                        ) {
+                            errors.age = 'Invalid age';
+                        }
+                        if (!values.address) {
+                            errors.address = 'Required';
+                        } else if (
+                            !/^0x[a-fA-F0-9]{40}$/.test(values.address)
+                        ) {
+                            errors.address = 'Invalid hexadecimal address';
+                        }
+                        return errors;
+                    }}
+                >
+                    {({
+                        values,
+                        errors,
+                        handleChange,
+                    }) => (
+                        <form className={styles.myform} onSubmit={(e) => {
+                                e.preventDefault();
+                                if (!errors.name && !errors.age && !errors.address) {
+                                    console.log(JSON.stringify(values, null, 2))
+                                }
+                            }
+                        }>
+                            <label className={styles.formlabel}>Name</label>
+                            <input
+                                type="name"
+                                name="name"
+                                onChange={handleChange}
+                                value={values.name}
+                                autoComplete="off"
+                            />
+                            <div className={styles.formerror}>{errors.name}</div>
+                            <label className={styles.formlabel}>Age</label>
+                            <input
+                                type="age"
+                                name="age"
+                                onChange={handleChange}
+                                value={values.age}
+                                autoComplete="off"
+                            />
+                            <div className={styles.formerror}>{errors.age}</div>
+                            <label className={styles.formlabel}>Address</label>
+                            <input
+                                type="address"
+                                name="address"
+                                onChange={handleChange}
+                                value={values.address}
+                                autoComplete="off"
+                            />
+                            <div className={styles.formerror}>{errors.address}</div>
+                            <button type="submit">
+                                Submit
+                            </button>
+                        </form>
+                    )}
+                </Formik>
+                <div className={styles.eventtext}>
+                    <h3>Last Greeting:</h3>
+                    {lastGreeting}
                 </div>
             </main>
         </div>

@@ -55,3 +55,29 @@
     line-height: 1.5;
     font-size: 1.5rem;
 }
+
+.myform {
+    border: 2px solid #A3E5BA;
+    border-radius: 5px;
+    padding: 12px;
+    margin: 12px;
+    width: 40%;
+    display: flex;
+    flex-direction: column;
+}
+
+.formlabel {
+    margin: 2px;
+}
+
+.formerror {
+    color: rgb(255, 48, 11);
+}
+
+.eventtext {
+    border: 2px solid #A3E5BA;
+    border-radius: 5px;
+    padding: 12px;
+    margin: 12px;
+    width: 40%;
+}
